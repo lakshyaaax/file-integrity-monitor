@@ -11,11 +11,12 @@ def get_files(folder_path):
         print("[ERROR] Protected directory not found.")
         return None
 
-    files = []
-
-    for file in folder.iterdir():
-        if file.is_file():
-            files.append(file)
+    # Recursively find every file inside the protected folder
+    files = [
+        file
+        for file in folder.rglob("*")
+        if file.is_file()
+    ]
 
     return files
 
@@ -33,7 +34,8 @@ def create_file_hashes(folder_path):
 
     return file_hashes
 
-def scan_files(baseline):
+
+def scan_files(baseline, log_events=True):
     current_hashes = create_file_hashes("protected")
 
     if current_hashes is None:
@@ -45,43 +47,51 @@ def scan_files(baseline):
     for file, current_hash in current_hashes.items():
 
         if file not in baseline:
+
             print(f"+ NEW FILE: {file}")
 
-            log_event(
-                "NEW",
-                file,
-                new_hash=current_hash
-            )
+            if log_events:
+                log_event(
+                    "NEW",
+                    file,
+                    new_hash=current_hash
+                )
 
             events.append(("NEW", file))
 
         elif current_hash != baseline[file]:
+
             print(f"🚨 MODIFIED: {file}")
 
-            log_event(
-                "MODIFIED",
-                file,
-                old_hash=baseline[file],
-                new_hash=current_hash
-            )
+            if log_events:
+                log_event(
+                    "MODIFIED",
+                    file,
+                    old_hash=baseline[file],
+                    new_hash=current_hash
+                )
 
             events.append(("MODIFIED", file))
 
         else:
+
             print(f"✓ OK: {file}")
 
     # Check for deleted files
     for file in baseline:
 
         if file not in current_hashes:
+
             print(f"❌ DELETED: {file}")
 
-            log_event(
-                "DELETED",
-                file,
-                old_hash=baseline[file]
-            )
+            if log_events:
+                log_event(
+                    "DELETED",
+                    file,
+                    old_hash=baseline[file]
+                )
 
             events.append(("DELETED", file))
 
     return events
+

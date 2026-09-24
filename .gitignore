@@ -11,3 +11,4 @@ env/
 
 security_events.log
 baseline.json
+events.db

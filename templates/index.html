@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>File Integrity Monitor</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+
+<body>
+
+<div class="dashboard">
+
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+
+    <header class="header">
+
+        <div>
+            <h1>🛡️ File Integrity Monitor</h1>
+
+            <p>
+                File integrity monitoring dashboard
+            </p>
+        </div>
+
+
+        <div class="status">
+
+            <span class="status-dot"></span>
+
+            SYSTEM ONLINE
+
+        </div>
+
+    </header>
+
+
+
+    <!-- =========================
+         STATISTICS
+    ========================== -->
+
+    <section class="stats">
+
+
+        <div class="stat-card">
+
+            <span class="stat-title">
+                PROTECTED FILES
+            </span>
+
+            <span class="stat-value">
+                {{ dashboard.total_files }}
+            </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-title">
+                NEW FILES
+            </span>
+
+            <span class="stat-value">
+                {{ dashboard.new_files }}
+            </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-title">
+                MODIFIED
+            </span>
+
+            <span class="stat-value">
+                {{ dashboard.modified_files }}
+            </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <span class="stat-title">
+                DELETED
+            </span>
+
+            <span class="stat-value">
+                {{ dashboard.deleted_files }}
+            </span>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         SCAN BUTTON
+    ========================== -->
+
+    <section class="actions">
+
+        <a href="/scan" class="scan-button">
+            🔍 Scan Now
+        </a>
+
+    </section>
+
+
+
+    <!-- =========================
+         CURRENT FILE STATUS
+    ========================== -->
+
+    <section class="file-status">
+
+        <h2>File Status</h2>
+
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            File
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for file, status in dashboard.file_status.items() %}
+
+                    <tr>
+
+                        <td>
+                            {{ file }}
+                        </td>
+
+
+                        <td>
+
+                            {% if status == "OK" %}
+
+                                <span class="status-ok">
+                                    ✓ OK
+                                </span>
+
+
+                            {% elif status == "MODIFIED" %}
+
+                                <span class="status-modified">
+                                    ⚠ MODIFIED
+                                </span>
+
+
+                            {% elif status == "DELETED" %}
+
+                                <span class="status-deleted">
+                                    ✕ DELETED
+                                </span>
+
+
+                            {% elif status == "NEW" %}
+
+                                <span class="status-new">
+                                    + NEW
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =========================
+         LATEST SCAN EVENTS
+    ========================== -->
+
+    <section class="events">
+
+        <h2>
+            Latest Scan Events
+        </h2>
+
+
+        {% if events %}
+
+
+            {% for event in events %}
+
+            <div class="event-card">
+
+
+                <span class="event-type">
+
+                    {% if event[0] == "MODIFIED" %}
+
+                        <span class="status-modified">
+                            ⚠ MODIFIED
+                        </span>
+
+
+                    {% elif event[0] == "NEW" %}
+
+                        <span class="status-new">
+                            + NEW
+                        </span>
+
+
+                    {% elif event[0] == "DELETED" %}
+
+                        <span class="status-deleted">
+                            ✕ DELETED
+                        </span>
+
+                    {% endif %}
+
+                </span>
+
+
+                <span class="event-file">
+
+                    {{ event[1] }}
+
+                </span>
+
+
+            </div>
+
+            {% endfor %}
+
+
+        {% else %}
+
+
+            <div class="no-events">
+
+                ✓ No security events detected.
+
+            </div>
+
+
+        {% endif %}
+
+    </section>
+
+
+
+    <!-- =========================
+         SECURITY EVENT HISTORY
+    ========================== -->
+
+    <section class="event-history">
+
+
+        <div class="history-header">
+
+            <div>
+
+                <h2>
+                    Security Event History
+                </h2>
+
+                <p class="history-description">
+                    Historical security events stored in SQLite
+                </p>
+
+            </div>
+
+
+            <div class="event-count">
+
+                {{ event_history|length }}
+
+                events
+
+            </div>
+
+        </div>
+
+
+
+        <!-- FILTER BUTTONS -->
+
+        <div class="event-filters">
+
+
+            <button
+                class="filter-button active"
+                onclick="filterEvents('ALL', this)"
+            >
+                ALL
+            </button>
+
+
+            <button
+                class="filter-button"
+                onclick="filterEvents('NEW', this)"
+            >
+                + NEW
+            </button>
+
+
+            <button
+                class="filter-button"
+                onclick="filterEvents('MODIFIED', this)"
+            >
+                ⚠ MODIFIED
+            </button>
+
+
+            <button
+                class="filter-button"
+                onclick="filterEvents('DELETED', this)"
+            >
+                ✕ DELETED
+            </button>
+
+
+        </div>
+
+
+
+        {% if event_history %}
+
+
+        <div class="table-container">
+
+
+            <table class="history-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Timestamp
+                        </th>
+
+                        <th>
+                            Event
+                        </th>
+
+                        <th>
+                            File
+                        </th>
+
+                        <th>
+                            Old Hash
+                        </th>
+
+                        <th>
+                            New Hash
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+
+                <tbody id="event-history-body">
+
+
+                    {% for event in event_history %}
+
+
+                    <tr
+                        class="history-row"
+                        data-event-type="{{ event[1] }}"
+                    >
+
+
+                        <!-- Timestamp -->
+
+                        <td class="timestamp">
+
+                            {{ event[0] }}
+
+                        </td>
+
+
+
+                        <!-- Event -->
+
+                        <td>
+
+
+                            {% if event[1] == "MODIFIED" %}
+
+                                <span class="status-modified">
+                                    ⚠ MODIFIED
+                                </span>
+
+
+                            {% elif event[1] == "NEW" %}
+
+                                <span class="status-new">
+                                    + NEW
+                                </span>
+
+
+                            {% elif event[1] == "DELETED" %}
+
+                                <span class="status-deleted">
+                                    ✕ DELETED
+                                </span>
+
+                            {% endif %}
+
+
+                        </td>
+
+
+
+                        <!-- File -->
+
+                        <td class="file-path">
+
+                            {{ event[2] }}
+
+                        </td>
+
+
+
+                        <!-- Old Hash -->
+
+                        <td class="hash">
+
+                            {% if event[3] %}
+
+                                {{ event[3][:16] }}...
+
+                            {% else %}
+
+                                —
+
+                            {% endif %}
+
+                        </td>
+
+
+
+                        <!-- New Hash -->
+
+                        <td class="hash">
+
+                            {% if event[4] %}
+
+                                {{ event[4][:16] }}...
+
+                            {% else %}
+
+                                —
+
+                            {% endif %}
+
+                        </td>
+
+
+                    </tr>
+
+
+                    {% endfor %}
+
+
+                </tbody>
+
+
+            </table>
+
+        </div>
+
+
+        {% else %}
+
+
+        <div class="no-events">
+
+            No historical security events recorded.
+
+        </div>
+
+
+        {% endif %}
+
+
+    </section>
+
+
+
+</div>
+
+
+
+<!-- =========================
+     FILTER JAVASCRIPT
+========================== -->
+
+<script>
+
+function filterEvents(type, button) {
+
+    const rows = document.querySelectorAll(".history-row");
+
+    const buttons = document.querySelectorAll(".filter-button");
+
+
+    // Remove active state from all buttons
+
+    buttons.forEach(function(btn) {
+
+        btn.classList.remove("active");
+
+    });
+
+
+    // Activate selected button
+
+    button.classList.add("active");
+
+
+    // Filter rows
+
+    rows.forEach(function(row) {
+
+        const eventType = row.dataset.eventType;
+
+
+        if (type === "ALL") {
+
+            row.style.display = "";
+
+        }
+
+        else if (eventType === type) {
+
+            row.style.display = "";
+
+        }
+
+        else {
+
+            row.style.display = "none";
+
+        }
+
+    });
+
+}
+
+</script>
+
+
+</body>
+
+</html>

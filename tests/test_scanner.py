@@ -52,3 +52,17 @@ def test_unchanged_file():
     assert ("MODIFIED", file_path) not in events
     assert ("NEW", file_path) not in events
     assert ("DELETED", file_path) not in events
+
+
+def test_recursive_file_detection(tmp_path):
+    from scanner import get_files
+
+    nested_folder = tmp_path / "protected" / "system"
+    nested_folder.mkdir(parents=True)
+
+    test_file = nested_folder / "config.txt"
+    test_file.write_text("test configuration")
+
+    files = get_files(tmp_path / "protected")
+
+    assert test_file in files
